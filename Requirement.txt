@@ -1,0 +1,8 @@
+streamlit
+torch
+ultralytics
+geopy
+pyttsx3
+geocoder
+opencv-python
+pillow
