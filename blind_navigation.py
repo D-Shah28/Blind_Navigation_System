@@ -186,19 +186,21 @@ def blind_navigation(destination):
     cap.release()
     cv2.destroyAllWindows()
 
-# Function to capture voice command
 def get_voice_command():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
+    """Gets the destination from the user. Uses microphone if available, otherwise asks for manual input."""
+    try:
+        import speech_recognition as sr
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
             engine.say("Where do you want to go?")
             engine.runAndWait()
             recognizer.adjust_for_ambient_noise(source, duration=1)
             audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
             return recognizer.recognize_google(audio).lower()
-    except OSError:
+    except (OSError, AttributeError):
         print("⚠️ No microphone detected! Please enter your destination manually.")
         return input("Enter your destination: ").strip().lower()
-
+        
 if __name__ == "__main__":
     destination = get_voice_command()
     if destination:
