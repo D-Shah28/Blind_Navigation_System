@@ -4,5 +4,7 @@ ultralytics
 geopy
 pyttsx3
 geocoder
-opencv-python-headless  # Important! Fixes OpenCV error
+opencv-python-headless  # Fix OpenCV error on Streamlit
 pillow
+speechrecognition
+pyaudio
