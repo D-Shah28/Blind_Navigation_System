@@ -189,6 +189,9 @@ def blind_navigation(destination):
     cv2.destroyAllWindows()
 
 # **Updated Function: Allows Both Voice & Manual Input**
+import os
+import speech_recognition as sr
+
 def get_voice_command():
     """Gets the destination from the user using voice if a microphone is available, otherwise asks for manual input."""
 
