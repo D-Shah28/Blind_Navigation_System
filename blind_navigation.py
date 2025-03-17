@@ -186,27 +186,31 @@ def blind_navigation(destination):
     cap.release()
     cv2.destroyAllWindows()
 
+# **Updated Function: Allows Both Voice & Manual Input**
 def get_voice_command():
-    """Gets the destination from the user. Uses microphone if available, otherwise asks for manual input."""
+    """Gets the destination via voice or manual input."""
+    
+    print("Press Enter to use voice input OR type 'manual' for manual input:")
+    user_choice = input().strip().lower()
+
+    if user_choice == "manual":
+        return input("Enter your destination manually: ").strip().lower()
+
     try:
-        import speech_recognition as sr
         recognizer = sr.Recognizer()
         with sr.Microphone() as source:
-            engine.say("Where do you want to go?")
-            engine.runAndWait()
+            print("Listening for destination...")
             recognizer.adjust_for_ambient_noise(source, duration=1)
             audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
             return recognizer.recognize_google(audio).lower()
-    except (OSError, AttributeError):
-        print("⚠️ No microphone detected! Please enter your destination manually.")
+    except:
+        print("⚠️ Voice input failed! Switching to manual input.")
         return input("Enter your destination: ").strip().lower()
-        
+
 if __name__ == "__main__":
     destination = get_voice_command()
-    if destination:
-        matched_location = difflib.get_close_matches(destination.lower(), locations.keys(), n=1, cutoff=0.5)
-        if matched_location:
-            blind_navigation(matched_location[0])
-        else:
-            engine.say("Destination not recognized. Try again.")
-            engine.runAndWait()
+    if destination and destination in locations:
+        blind_navigation(destination)
+    else:
+        engine.say("Destination not recognized. Try again.")
+        engine.runAndWait()
