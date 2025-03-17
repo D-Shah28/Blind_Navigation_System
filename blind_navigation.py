@@ -190,14 +190,14 @@ def blind_navigation(destination):
 def get_voice_command():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        engine.say("Where do you want to go?")
-        engine.runAndWait()
-        recognizer.adjust_for_ambient_noise(source, duration=1)
-        try:
+            engine.say("Where do you want to go?")
+            engine.runAndWait()
+            recognizer.adjust_for_ambient_noise(source, duration=1)
             audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
             return recognizer.recognize_google(audio).lower()
-        except:
-            return None
+    except OSError:
+        print("⚠️ No microphone detected! Please enter your destination manually.")
+        return input("Enter your destination: ").strip().lower()
 
 if __name__ == "__main__":
     destination = get_voice_command()
