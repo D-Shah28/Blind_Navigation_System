@@ -2,6 +2,8 @@ import cv2
 import torch
 import sys
 import pyttsx3
+import os
+import speech_recognition as sr
 from geopy.distance import geodesic
 import json
 import time
@@ -187,37 +189,11 @@ def blind_navigation(destination):
     cv2.destroyAllWindows()
 
 # **Updated Function: Allows Both Voice & Manual Input**
-import os
-import speech_recognition as sr
+def get_destination_input():
+    """Gets the destination from the user using manual input only."""
+    destination = input("Enter your destination: ").strip().lower()
+    return destination
 
-def get_voice_command():
-    """Gets the destination from the user using voice if a microphone is available, otherwise asks for manual input."""
-
-    # Check if running on AWS EC2 (Linux server)
-    if os.path.exists("/home/ubuntu"):
-        print("🚀 Running on AWS. Skipping voice input and switching to manual typing.")
-        return input("Enter your destination: ").strip().lower()
-
-    recognizer = sr.Recognizer()
-
-    try:
-        mic_list = sr.Microphone.list_microphone_names()
-        if not mic_list:
-            raise OSError("No microphone detected!")
-
-        with sr.Microphone() as source:
-            engine.say("Where do you want to go?")
-            engine.runAndWait()
-            recognizer.adjust_for_ambient_noise(source, duration=1)
-            audio = recognizer.listen(source, timeout=10, phrase_time_limit=5)
-            return recognizer.recognize_google(audio).lower()
-
-    except (OSError, AttributeError):
-        print("⚠️ No microphone detected! Please enter your destination manually.")
-        engine.say("No microphone detected. Please type your destination.")
-        engine.runAndWait()
-        return input("Enter your destination: ").strip().lower()
-        
 if __name__ == "__main__":
     destination = get_voice_command()
     if destination and destination in locations:
