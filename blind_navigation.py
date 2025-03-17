@@ -1,16 +1,12 @@
 import cv2
 import torch
-import sys
 import pyttsx3
-import os
-import speech_recognition as sr
-from geopy.distance import geodesic
 import json
 import time
-import difflib
 import math
 import numpy as np
 import geocoder
+from geopy.distance import geodesic
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
@@ -124,18 +120,6 @@ def detect_objects(frame, last_warning_time):
 
     return detected_objects, frame, last_warning_time
 
-# Function to listen for stop command
-def listen_for_stop_command():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        recognizer.adjust_for_ambient_noise(source, duration=1)
-        try:
-            print("Listening for 'Stop Navigation' command...")
-            audio = recognizer.listen(source, timeout=5, phrase_time_limit=3)
-            return "stop navigation" in recognizer.recognize_google(audio).lower()
-        except:
-            return False
-
 # Core navigation function
 def blind_navigation(destination):
     if destination not in locations:
@@ -176,26 +160,20 @@ def blind_navigation(destination):
             detected_objects, frame, last_warning_time = detect_objects(frame, last_warning_time)
             cv2.imshow("Blind Navigation", frame)
 
-        if listen_for_stop_command():
-            print("🛑 Stop command detected. Exiting navigation...")
-            engine.say("Navigation stopped.")
-            engine.runAndWait()
-            break
-
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break    
 
     cap.release()
     cv2.destroyAllWindows()
 
-# **Updated Function: Allows Both Voice & Manual Input**
+# **Updated Function: Allows Manual Input Only**
 def get_destination_input():
     """Gets the destination from the user using manual input only."""
     destination = input("Enter your destination: ").strip().lower()
     return destination
 
 if __name__ == "__main__":
-    destination = get_voice_command()
+    destination = get_destination_input()
     if destination and destination in locations:
         blind_navigation(destination)
     else:
