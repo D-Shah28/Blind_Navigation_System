@@ -2,8 +2,6 @@ import cv2
 import torch
 import sys
 import pyttsx3
-import speech_recognition as sr
-import os
 from geopy.distance import geodesic
 import json
 import time
