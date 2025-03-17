@@ -190,6 +190,8 @@ def blind_navigation(destination):
 # **Updated Function: Allows Both Voice & Manual Input**
 import speech_recognition as sr
 
+import speech_recognition as sr
+
 def get_voice_command():
     """Gets the destination from the user using voice if a microphone is available, otherwise asks for manual input."""
     recognizer = sr.Recognizer()
@@ -211,6 +213,8 @@ def get_voice_command():
     except (OSError, AttributeError):
         # If no microphone, ask for manual input
         print("⚠️ No microphone detected! Please enter your destination manually.")
+        engine.say("No microphone detected. Please type your destination.")
+        engine.runAndWait()
         return input("Enter your destination: ").strip().lower()
         
 if __name__ == "__main__":
