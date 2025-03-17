@@ -188,15 +188,19 @@ def blind_navigation(destination):
     cv2.destroyAllWindows()
 
 # **Updated Function: Allows Both Voice & Manual Input**
-def get_voice_command():
-    """Gets the destination from the user. Uses microphone if available, otherwise asks for manual input."""
-    try:
-        recognizer = sr.Recognizer()
+import speech_recognition as sr
 
-        # Check if PyAudio is available (Microphone detection)
-        if not hasattr(sr.Microphone, "list_microphone_names") or not sr.Microphone.list_microphone_names():
+def get_voice_command():
+    """Gets the destination from the user using voice if a microphone is available, otherwise asks for manual input."""
+    recognizer = sr.Recognizer()
+
+    try:
+        # Check if microphones are available
+        mic_list = sr.Microphone.list_microphone_names()
+        if not mic_list:
             raise OSError("No microphone detected!")
 
+        # If a microphone exists, use it
         with sr.Microphone() as source:
             engine.say("Where do you want to go?")
             engine.runAndWait()
@@ -205,9 +209,10 @@ def get_voice_command():
             return recognizer.recognize_google(audio).lower()
 
     except (OSError, AttributeError):
+        # If no microphone, ask for manual input
         print("⚠️ No microphone detected! Please enter your destination manually.")
         return input("Enter your destination: ").strip().lower()
-
+        
 if __name__ == "__main__":
     destination = get_voice_command()
     if destination and destination in locations:
