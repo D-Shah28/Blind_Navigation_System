@@ -1,10 +1,9 @@
 streamlit
-opencv-python-headless
 torch
 torchvision
-torchaudio
-geocoder
-geopy
-gtts
-SpeechRecognition
+ultralytics
+opencv-python
 numpy
+gtts
+geopy
+requests
