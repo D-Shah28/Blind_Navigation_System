@@ -5,6 +5,6 @@ torchvision
 torchaudio
 geocoder
 geopy
-pyttsx3
+gtts
 SpeechRecognition
 numpy
