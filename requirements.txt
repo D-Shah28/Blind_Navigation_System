@@ -7,6 +7,5 @@ SpeechRecognition
 geocoder
 geopy
 numpy
-difflib
 PyAudiop
 Python-multiprocessing
