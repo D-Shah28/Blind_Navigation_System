@@ -2,7 +2,7 @@ streamlit
 torch
 torchvision
 ultralytics
-opencv-python
+opencv-python-headless  # Use headless version for cloud environments
 numpy
 gtts
 geopy
