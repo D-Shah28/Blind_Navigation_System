@@ -1,5 +1,11 @@
+import os
 import streamlit as st
-import cv2
+
+# Install missing system dependencies
+os.system("apt-get update")
+os.system("apt-get install -y libgl1-mesa-glx")
+
+import cv2  # Now import OpenCV after installing dependencies
 import torch
 import speech_recognition as sr
 import numpy as np
@@ -7,7 +13,6 @@ import requests
 import json
 import geopy.distance
 from gtts import gTTS
-import os
 import time
 import threading
 
