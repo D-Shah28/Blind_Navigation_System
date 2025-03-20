@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import torch
 import pyttsx3
 import speech_recognition as sr
@@ -12,6 +11,10 @@ import multiprocessing
 from geopy.distance import geodesic
 import os
 import signal
+try:
+    import cv2
+except ImportError:
+    print("OpenCV is not installed properly.")
 
 # Initialize Text-to-Speech
 engine = pyttsx3.init()
