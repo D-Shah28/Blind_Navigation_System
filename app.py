@@ -24,7 +24,10 @@ def speak(text):
     os.system("mpg321 output.mp3")  # On Streamlit Cloud, it may not work
 
 # Load YOLO model (Upgraded to YOLOv5m for better accuracy)
-model = torch.hub.load("ultralytics/yolov5", "yolov5m")
+from ultralytics import YOLO
+
+# Load YOLO model
+model = YOLO("yolov5m.pt")  # Ensure this model file exists in your repo
 
 # Load university locations from GeoJSON
 with open("university_map.geojson", "r", encoding="utf-8") as file:
