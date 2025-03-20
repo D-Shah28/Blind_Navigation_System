@@ -27,7 +27,7 @@ def speak(text):
 from ultralytics import YOLO
 
 # Load YOLO model
-model = YOLO("yolov5m.pt")  # Ensure this model file exists in your repo
+model = YOLO("yolov5s.pt")  # Ensure this model file exists in your repo
 
 # Load university locations from GeoJSON
 with open("university_map.geojson", "r", encoding="utf-8") as file:
