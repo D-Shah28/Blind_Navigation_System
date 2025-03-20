@@ -7,3 +7,5 @@ numpy
 gtts
 geopy
 requests
+SpeechRecognition
+pyaudio
