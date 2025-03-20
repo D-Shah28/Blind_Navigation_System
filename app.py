@@ -18,8 +18,10 @@ except ImportError:
     print("OpenCV is not installed properly.")
 
 # Initialize Text-to-Speech
-engine = pyttsx3.init()
-engine.setProperty("rate", 160)
+def speak(text):
+    tts = gTTS(text=text, lang="en")
+    tts.save("output.mp3")
+    os.system("mpg321 output.mp3")  # On Streamlit Cloud, it may not work
 
 # Load YOLO model (Upgraded to YOLOv5m for better accuracy)
 model = torch.hub.load("ultralytics/yolov5", "yolov5m")
