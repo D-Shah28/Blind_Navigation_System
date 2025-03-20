@@ -1,6 +1,7 @@
 import streamlit as st
 import torch
-import pyttsx3
+from gtts import gTTS
+import os
 import speech_recognition as sr
 import json
 import numpy as np
