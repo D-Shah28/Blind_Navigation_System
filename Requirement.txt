@@ -1,10 +1,10 @@
 streamlit
+opencv-python
 torch
-ultralytics
+torchvision
+torchaudio
+geocoder
 geopy
 pyttsx3
-geocoder
-opencv-python-headless  # Fix OpenCV error on Streamlit
-pillow
-speechrecognition
-pyaudio
+SpeechRecognition
+numpy
