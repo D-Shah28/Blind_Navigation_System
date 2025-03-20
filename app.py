@@ -1,231 +1,133 @@
 import streamlit as st
+import cv2
 import torch
+import speech_recognition as sr
+import numpy as np
+import requests
+import json
+import geopy.distance
 from gtts import gTTS
 import os
-import speech_recognition as sr
-import json
-import numpy as np
-import geocoder
-import difflib
 import time
-import multiprocessing
-from geopy.distance import geodesic
-import os
-import signal
-try:
-    import cv2
-except ImportError:
-    print("OpenCV is not installed properly.")
+import threading
 
-# Initialize Text-to-Speech
-def speak(text):
-    tts = gTTS(text=text, lang="en")
-    tts.save("output.mp3")
-    os.system("mpg321 output.mp3")  # On Streamlit Cloud, it may not work
+# Initialize Streamlit app
+st.title("Blind Navigation System")
+st.write("🎤 Speak your destination...")
 
 # Load YOLO model (Upgraded to YOLOv5m for better accuracy)
-from ultralytics import YOLO
+@st.cache_resource
+def load_model():
+    return torch.hub.load("ultralytics/yolov5", "yolov5m")
 
-# Load YOLO model
-model = YOLO("yolov5s.pt")  # Ensure this model file exists in your repo
+model = load_model()
 
 # Load university locations from GeoJSON
 with open("university_map.geojson", "r", encoding="utf-8") as file:
     university_map = json.load(file)
 
-locations = {}
-for feature in university_map["features"]:
-    properties = feature.get("properties", {})
-    name = properties.get("name", "").strip().lower()
-    if name:
-        locations[name] = tuple(reversed(feature["geometry"]["coordinates"]))
+# Function to get coordinates of a destination
+def get_coordinates(destination):
+    for feature in university_map["features"]:
+        if feature["properties"]["name"].lower() == destination.lower():
+            return feature["geometry"]["coordinates"]
+    return None
 
-# Function to get current GPS location
+# Function to get current GPS location (Placeholder: Replace with real GPS data)
 def get_current_location():
-    g = geocoder.ip("me")
-    return g.latlng if g.latlng else None
+    return [28.6139, 77.2090]  # Example coordinates for testing
 
-# Function to stop all processes
-def stop_all_processes(navigation_proc, object_detection_proc, voice_command_proc):
-    print("Stopping all processes...")
-    for proc in [navigation_proc, object_detection_proc, voice_command_proc]:
-        if proc and proc.is_alive():
-            proc.terminate()
-    print("All processes stopped successfully.")
+# Function to calculate distance
+def calculate_distance(coord1, coord2):
+    return geopy.distance.geodesic(coord1, coord2).m
 
-# Function to recognize voice commands
-def listen_for_commands(command_queue):
+# Text-to-Speech function
+def speak(text):
+    tts = gTTS(text=text, lang="en")
+    tts.save("output.mp3")
+    os.system("mpg321 output.mp3")  # Works on local, may not work in Streamlit Cloud
+
+# Function to recognize voice input using Google Web Speech API
+def recognize_voice():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        while True:
-            recognizer.adjust_for_ambient_noise(source)
-            try:
-                print("Listening for commands...")
-                audio = recognizer.listen(source, timeout=5)
-                command = recognizer.recognize_google(audio).lower()
-                print(f"Recognized command: {command}")
+        recognizer.adjust_for_ambient_noise(source)
+        st.write("🎤 Listening for destination...")
+        try:
+            audio = recognizer.listen(source)
+            destination = recognizer.recognize_google(audio)
+            st.write(f"✅ Recognized: {destination}")
+            return destination.lower()
+        except sr.UnknownValueError:
+            st.write("❌ Could not understand audio.")
+            return None
+        except sr.RequestError:
+            st.write("⚠️ Speech recognition service unavailable.")
+            return None
 
-                if "stop navigation" in command:
-                    command_queue.put("STOP")
-                elif "start navigation" in command:
-                    command_queue.put("START")
-                else:
-                    command_queue.put(command)
-
-            except sr.UnknownValueError:
-                print("Could not understand voice.")
-            except sr.RequestError:
-                print("Error with speech recognition.")
-
-# Function for real-time GPS navigation
-def navigation_process(target_location, command_queue):
-    last_alert_time = 0  
-
-    while True:
-        if not command_queue.empty():
-            command = command_queue.get()
-            if command == "STOP":
-                print("Navigation stopped.")
-                engine.say("Navigation stopped.")
-                engine.runAndWait()
-                return
-
-        current_location = get_current_location()
-        if not current_location:
-            print("GPS Error: Unable to fetch location.")
-            continue
-
-        distance = geodesic(current_location, target_location).meters
-
-        if distance < 3:
-            print("You have reached your destination.")
-            engine.say("You have arrived at your destination.")
-            engine.runAndWait()
-            return
-
-        if time.time() - last_alert_time > 5:
-            if distance > 50:
-                direction = "Move Forward"
-            elif distance > 30:
-                direction = "Slight Left"
-            elif distance > 10:
-                direction = "Slight Right"
-            else:
-                direction = "Stop and check surroundings"
-
-            print(f"Distance: {distance:.2f}m | {direction}")
-            engine.say(f"{direction}, {int(distance)} meters remaining.")
-            engine.runAndWait()
-            last_alert_time = time.time()
-
-        time.sleep(2)
-
-# Function for real-time object detection
-def object_detection_process(command_queue):
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Error accessing webcam.")
+# Function to provide navigation guidance
+def start_navigation(destination):
+    target_coords = get_coordinates(destination)
+    if target_coords is None:
+        st.write("⚠️ Destination not found in university map.")
         return
 
-    last_object_alert = 0  
+    current_coords = get_current_location()
+    distance = calculate_distance(current_coords, target_coords)
 
+    st.write(f"📍 Navigating to {destination} ({distance:.2f} meters away)")
+    speak(f"Navigating to {destination}")
+
+    while distance > 5:  # Stop when close to destination
+        current_coords = get_current_location()  # Update real-time location
+        distance = calculate_distance(current_coords, target_coords)
+
+        if distance > 50:
+            st.write(f"➡️ Move Forward | {distance:.2f}m left")
+            speak(f"Move forward, {distance:.2f} meters left")
+        elif distance <= 50 and distance > 5:
+            st.write("🛑 Approaching destination...")
+            speak("You are close to your destination.")
+        else:
+            st.write("✅ You have arrived!")
+            speak("You have arrived at your destination.")
+            break
+
+        time.sleep(5)  # Wait before updating
+
+# Function to detect objects
+def detect_objects():
+    cap = cv2.VideoCapture(0)
     while True:
         ret, frame = cap.read()
         if not ret:
-            continue
+            break
 
         results = model(frame)
-        detected_objects = []
+        for det in results.xyxy[0]:  # xyxy format
+            x1, y1, x2, y2, conf, cls = det
+            label = model.names[int(cls)]
+            obj_distance = round((y2 - y1) / 10, 2)  # Approximate distance measure
 
-        for result in results.xyxy[0]:
-            try:
-                x1, y1, x2, y2, conf, cls = result[:6]
-                if conf < 0.3:
-                    continue
+            if obj_distance < 100:  # Notify only for nearby objects
+                st.write(f"⚠️ Caution: {label} {obj_distance} cm ahead")
+                speak(f"Caution, {label} {obj_distance} centimeters ahead")
 
-                label = model.names[int(cls)]
-                object_distance = max(10, int((x2 - x1) / 2))  
-                detected_objects.append((label, object_distance))
+        time.sleep(2)
 
-            except Exception as e:
-                print(f"Detection Error: {e}")
+    cap.release()
+    cv2.destroyAllWindows()
 
-        if detected_objects and time.time() - last_object_alert > 3:
-            objects_text = ", ".join([f"{obj[0]} {obj[1]} cm ahead" for obj in detected_objects])
-            print(f"Caution: {objects_text}")
-            engine.say(f"Caution: {objects_text}")
-            engine.runAndWait()
-            last_object_alert = time.time()
+# Main execution
+destination = recognize_voice()
+if destination:
+    navigation_thread = threading.Thread(target=start_navigation, args=(destination,))
+    object_detection_thread = threading.Thread(target=detect_objects)
 
-        if not command_queue.empty():
-            command = command_queue.get()
-            if command == "STOP":
-                print("Stopping object detection.")
-                cap.release()
-                return
+    navigation_thread.start()
+    object_detection_thread.start()
 
-        time.sleep(1)
+    navigation_thread.join()
+    object_detection_thread.join()
 
-# Function to get destination from user
-def get_destination():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎤 Where do you want to go?")
-        engine.say("Where do you want to go?")
-        engine.runAndWait()
-        recognizer.adjust_for_ambient_noise(source)
-
-        try:
-            audio = recognizer.listen(source, timeout=5)
-            destination = recognizer.recognize_google(audio).lower()
-            st.success(f"✅ Recognized: {destination}")
-            return destination
-        except sr.UnknownValueError:
-            st.error("⚠️ Could not understand destination.")
-        except sr.RequestError:
-            st.error("⚠️ Speech recognition error.")
-
-    return None
-
-# Function to start the navigation and object detection processes
-def start_navigation():
-    destination = get_destination()
-    if not destination:
-        return
-
-    matched_location = difflib.get_close_matches(destination.lower(), locations.keys(), n=1, cutoff=0.3)
-    if not matched_location:
-        st.error("Invalid destination. Please try again.")
-        engine.say("Invalid destination. Please try again.")
-        engine.runAndWait()
-        return
-
-    target_location = locations[matched_location[0]]
-    
-    st.success(f"📍 Navigating to {matched_location[0]}")
-    engine.say(f"Navigating to {matched_location[0]}")
-    engine.runAndWait()
-
-    command_queue = multiprocessing.Queue()
-
-    navigation_proc = multiprocessing.Process(target=navigation_process, args=(target_location, command_queue))
-    object_detection_proc = multiprocessing.Process(target=object_detection_process, args=(command_queue,))
-    voice_command_proc = multiprocessing.Process(target=listen_for_commands, args=(command_queue,))
-
-    navigation_proc.start()
-    object_detection_proc.start()
-    voice_command_proc.start()
-
-    navigation_proc.join()
-    object_detection_proc.join()
-    voice_command_proc.terminate()
-
-# Main function
-def main():
-    st.title("Blind Navigation System")
-    start_navigation()
-
-# Ensure multiprocessing works correctly on Windows
-if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    main()
+st.write("🔄 Restart the app to enter a new destination.")
